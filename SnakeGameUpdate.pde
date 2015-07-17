@@ -4,11 +4,15 @@
 #include "splash.h"
 
 //#define DEBUG_MODE
+<<<<<<< HEAD
 #define splash_millisecond_delay 3000
+=======
+#define splash_millisecond_delay 2750
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 typedef struct snode{
   uint8_t en;
   uint8_t count;
-  int *hue;
+  uint16_t *hue;
   uint8_t sat;
   uint8_t val;
   struct snode* tailptr;
@@ -43,11 +47,15 @@ int lastupdate;
 uint8_t lastbuf[2];
 static int i,j;
 uint16_t difficulty=500;
+<<<<<<< HEAD
 int snakehue=500;
+=======
+uint16_t snakehue=500;
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 
-int backhue=700;
+uint16_t backhue=700;
 
-int foodhue=214;
+uint16_t foodhue=214;
 
 int backupdate=0;
 
@@ -55,6 +63,9 @@ const uint8_t snakebrightness=200;
 const uint8_t backbrightness=15;
 
 const uint8_t refreshrate=15;
+
+
+bool timeSave = 0;
 
 int time =0;
 int timeDif = 0;
@@ -66,7 +77,11 @@ uint32_t EEPROM_temp[4];
 
 #define CHANGE_HEAP_SIZE(size) __asm__ volatile ("\t.globl _min_heap_size\n\t.equ _min_heap_size, " #size "\n")
 
+<<<<<<< HEAD
 CHANGE_HEAP_SIZE(0x0);
+=======
+CHANGE_HEAP_SIZE(0x1650);
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 
 extern __attribute__((section("linker_defined"))) char _heap;
 extern __attribute__((section("linker_defined"))) char _min_heap_size;
@@ -77,7 +92,11 @@ uint8_t update_flag = 0;
 uint8_t game_state = RESET_ST;
 
 int splash_prevTime = 0;
+<<<<<<< HEAD
 int splash_state = 0;
+=======
+int splash_state = 1;
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 
 void setup() {
   //start the serial monitor to show the high score when the game ends
@@ -87,15 +106,32 @@ void setup() {
     Serial.println("Microcontroller Starting up");
   #endif
 
+<<<<<<< HEAD
   strip.setArrayPointer(sketch_color_array);
 
+=======
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
   randomSeed(analogRead(A3));
   
   strip.begin();
   reset_grid(); 
 
+<<<<<<< HEAD
 //  for(int i=0; i<512;i++)
     //EEPROM.write(i, 0);
+=======
+  EEPROM.setMaxAddress(12);
+//
+ for(int i=0; i<512;i++)
+    EEPROM.write(i, 0);
+
+/*
+  EEPROM.write(1, 'a');
+  EEPROM.write(2, 'c');
+  EEPROM.write(3, 'b');
+  EEPROM.write(4, 'd');
+*/
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 
 }
 
@@ -111,6 +147,13 @@ void loop() {
     //reset state
     case RESET_ST:
       game_state = TITLE_ST;
+<<<<<<< HEAD
+=======
+      //delay for 1 seconds
+        reset_grid();
+      
+      delay(1000);
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
     break;
 
     //run title screen
@@ -120,6 +163,11 @@ void loop() {
         Serial.println("title screen case");
       #endif
 
+<<<<<<< HEAD
+=======
+      
+
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
       //check for button press to start game and exit title screen
       if(digitalRead(34)||digitalRead(35)||digitalRead(36)||digitalRead(37)){
 
@@ -130,7 +178,13 @@ void loop() {
           Serial.println("\n------------------------");
           Serial.println("Printing first score");
         #endif
+<<<<<<< HEAD
 
+=======
+        reset_grid();
+        dir= RIGHT;
+        lastdir = RIGHT;
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
         strtemp[0] = 0;
         strcpy(strtemp,"0");
         
@@ -148,7 +202,11 @@ void loop() {
         #endif
 
         strcat(strtemp, strtemp2);
+<<<<<<< HEAD
         Serial.println(strtemp);
+=======
+        Serial.print(strtemp);
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 
         //clear string
         strtemp2[0] = 0;
@@ -158,7 +216,11 @@ void loop() {
           strtemp2[i+1] = 0;
         }
 
+<<<<<<< HEAD
         Serial.print(strtemp2);
+=======
+        //Serial.print(strtemp2);
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 
         #if defined DEBUG_MODE
           Serial.print("\nname0: ");
@@ -196,7 +258,11 @@ void loop() {
           strtemp2[i+1] = 0;
         }
 
+<<<<<<< HEAD
         Serial.println(strtemp2);
+=======
+        //Serial.print(strtemp2);
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 
         #if defined DEBUG_MODE
           Serial.print("\nname1: ");
@@ -209,6 +275,7 @@ void loop() {
         //send third high score
         strtemp[0] = 0;
         strcpy(strtemp,"2");
+<<<<<<< HEAD
 
           #if defined DEBUG_MODE
             Serial.print("score2: ");
@@ -405,6 +472,206 @@ void loop() {
 
     break;
 
+=======
+
+          #if defined DEBUG_MODE
+            Serial.print("score2: ");
+            Serial.print(strtemp);
+            Serial.print("|");
+          #endif
+        
+        itoa(EEPROM.read(26), strtemp2, 10);
+
+        #if defined DEBUG_MODE
+          Serial.println(strtemp2);
+          Serial.print("data_packet2: ");
+        #endif
+        strcat(strtemp, strtemp2);
+        Serial.print(strtemp);
+
+        //clear string
+        strtemp2[0] = 0;
+        //read 12 bytes from EEPROM and make into a string
+        for(int i=0; i<12; i++){
+          strtemp2[i] = EEPROM.read(i+26);
+          strtemp2[i+1] = 0;
+        }
+
+        //Serial.print(strtemp2);
+
+        #if defined DEBUG_MODE
+          Serial.print("\nname2: ");
+          Serial.println(strtemp2);
+          Serial.println("------------------------\n");
+        #endif
+
+        strtemp[0] = 0;
+        
+        lastupdate=millis();
+        backupdate=millis();
+        
+        game_state = RUN_GAME_ST;
+
+         
+      }
+    break;
+
+    //RUN_GAME_ST
+    case RUN_GAME_ST:
+
+      #if defined DEBUG_MODE
+        Serial.println("Running Game");
+      #endif
+
+      run_game();
+    break;
+
+    //game over
+    case GAMEOVER_ST:
+        death();
+      #if defined DEBUG_MODE
+        Serial.println("In Gameover state");
+
+        Serial.println("Enter game score: ");
+
+        while(Serial.available())
+          temp_char = Serial.read();
+
+        while(Serial.available()==0);
+        
+        //read in string
+        while(Serial.available() > 0){
+          temp_char = Serial.read();
+          if(str_index < sizeof(strtemp))
+            strtemp[str_index++] = temp_char;
+        }
+        //terminate string
+        strtemp[str_index+1] = 0;      
+
+        length = atoi(strtemp);
+
+        Serial.print("You entered: ");
+        Serial.println(length);
+
+        Serial.println("Enter name: ");
+      #endif
+
+      //clear the strtemp
+      strtemp[0] = 0;
+
+      while(Serial.available())
+        temp_char = Serial.read();
+
+      //wait until button press or string is recieved
+      while((Serial.available()==0)&&(!digitalRead(34))&&(!digitalRead(35))&&(!digitalRead(36))&&(!digitalRead(37))){
+        splash3();
+      }
+      timeSave = 0;
+      //read in string
+      str_index = 0;
+      while(Serial.available() > 0){
+        temp_char = Serial.read();
+        if(str_index < 30)
+          strtemp[str_index++] = temp_char;
+
+        delay(1); //needed for some unknown reason!!!!!
+      }
+
+     //terminate string
+      strtemp[str_index+1] = 0;      
+
+
+      #if defined DEBUG_MODE
+        Serial.print("name: ");
+        Serial.println(strtemp);
+      #endif
+
+      if(strtemp[0] == 0)
+        strcpy(strtemp, "anonymous");
+
+      //horribly inefficient but easy
+      //check if new first high score
+      if(length > EEPROM.read(0)){
+
+
+      #if defined DEBUG_MODE
+        Serial.println("------------------------");
+        Serial.println("replacing score 0");
+        Serial.println("------------------------");
+      #endif
+
+        //copy 0 and 1 to 1 and 2
+        for(int i=25; i>=0; i--)
+          EEPROM.write(i+13, EEPROM.read(i));
+
+        EEPROM.write(0, length);
+
+        for(int i=0; strtemp[i]; i++){
+          EEPROM.write(i+1, (uint8_t)strtemp[i]);
+          EEPROM.write(i+2, 0);
+        }
+      }
+
+      //check if new second high score
+      else if(length > EEPROM.read(13)){
+
+      #if defined DEBUG_MODE
+        Serial.println("------------------------");
+        Serial.println("replacing score 1");
+        Serial.println("------------------------");
+      #endif
+
+        //copy 1 to 2
+        for(int i=25; i>=13; i--)
+          EEPROM.write(i+13, EEPROM.read(i));
+
+        EEPROM.write(13, length);
+
+        for(int i=0; strtemp[i]; i++){
+          EEPROM.write(i+13, strtemp[i]);
+          EEPROM.write(i+13, 0);
+        }
+      }
+
+      //check if new third high score
+      else if(length > EEPROM.read(26)){
+
+      #if defined DEBUG_MODE
+        Serial.println("------------------------");
+        Serial.println("replacing score 2");
+        Serial.println("------------------------");
+      #endif
+
+        EEPROM.write(26, length);
+
+        for(int i=0; strtemp[i]; i++){
+          EEPROM.write(i+26, strtemp[i]);
+          EEPROM.write(i+26, 0);
+        }
+      }
+
+
+      #if defined DEBUG_MODE
+        else{
+          Serial.println("------------------------");
+          Serial.println("not replacing a score");
+          Serial.println("------------------------");
+        }
+      #endif
+
+      reset_grid();
+
+      //print end game score
+      strcpy(strtemp,"4");
+      itoa(length, strtemp2, 10);
+      strcat(strtemp, strtemp2);
+      Serial.println(strtemp);
+
+      game_state = RESET_ST;
+
+    break;
+
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
     //error case
     default:
       for(int i=0; i<number_of_LEDs; i++)
@@ -482,6 +749,7 @@ void run_game(){
 }
 
 
+<<<<<<< HEAD
 void snake_splash_screen(){
     int row, col;
   if(millis()-splash_prevTime > splash_millisecond_delay){
@@ -490,19 +758,35 @@ void snake_splash_screen(){
               //Serial.println("ENTERED SPLASH LOOP");
               loadBitmap(splash_state);    
               //splash_store_array();
+=======
+//Splash screen which flips between 2 states
+void snake_splash_screen(){
+  int row, col;
+  
+  //flip between the tow screensa by calling load bitmap then refreshLeds
+  if(millis()-splash_prevTime > splash_millisecond_delay){
+	      splash_prevTime = millis();
+        if(splash_state){
+              loadBitmap(splash_state);    
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
               strip.refreshLEDs();
               splash_state = 0;
         }
         else{
+<<<<<<< HEAD
               //Serial.println("ENTERED SPLASH LOOP2");
               loadBitmap(splash_state); 
               // Serial.println("check1");   
               //splash_store_array();
               //Serial.println("check2");   
+=======
+              loadBitmap(splash_state); 
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
               strip.refreshLEDs();
               splash_state=1;
         }            
   }  
+<<<<<<< HEAD
     //Serial.println("Exit_splash");
   delay(1);
 }
@@ -523,11 +807,34 @@ void splash_store_array(){
         for(j = 0; j < 30; j++){       
          strip.HSVsetLEDColor(s, *grid[j][i].hue, grid[j][i].sat, grid[j][i].val);
          s ++;
+=======
+  delay(1);
+}
+
+//stores the grid into the PICxel library
+void splash_store_array(){
+  
+  int s = 0;
+  
+    for(i = 29; i >= 0; i--){ 
+    
+      if(i % 2 == 0){ 
+         for(j = 29; j >= 0; j--){    
+         strip.HSVsetLEDColor(s, *grid[j][i].hue, grid[j][i].sat, grid[j][i].val);
+         s++;        
+       }
+      }
+      else{
+        for(j = 0; j < 30; j++){     
+         strip.HSVsetLEDColor(s, *grid[j][i].hue, grid[j][i].sat, grid[j][i].val);
+         s++;
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
        } 
       }         
       }  
 }
 
+<<<<<<< HEAD
 void loadBitmap(uint16_t* bitmap){
   
   for(i =0; i < (number_of_LEDs * 3); i = i + 3){
@@ -544,6 +851,35 @@ void loadBitmap(uint16_t* bitmap){
   
   splash_store_array();
   strip.refreshLEDs();
+=======
+//Reads values from the hue and value arrays and then stores them into the grid
+//eventually we can change this to use the old store_array instead of splash_store_array
+//The difference is caused by the bitmap being upside down and backward
+void loadBitmap(int state){
+  
+  int row = 0;
+  int col = 0;
+  int stepper = 0;
+  
+  //store into array
+  for(stepper =0; stepper < (number_of_LEDs); stepper = stepper + 1){
+    row = (stepper) / 30;
+    col = (stepper) % 30;
+    if(state == 1){
+      grid[row][col].hue = &splash_main_hue[stepper];
+      grid[row][col].val = splash_main_val[stepper];
+    }
+   else{
+      grid[row][col].hue = &splash_btn_hue[stepper];
+      grid[row][col].val = splash_btn_val[stepper];
+   }
+       
+    grid[row][col].sat = 255;
+    
+          
+  }
+  splash_store_array();
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 }
 
 //Updates the 2D snake grid array in memory
@@ -618,7 +954,10 @@ void store_array(){
       }
     }
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 void store_blank(){
   int s = 0;
     for(i = 29; i >= 0 ; i--){
@@ -636,7 +975,10 @@ void store_blank(){
       }
     }
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
 void death(){
   store_blank();
   strip.refreshLEDs();
@@ -743,6 +1085,7 @@ void print_EEPROM(){
   Serial.println("------------------------");
 }
 
+<<<<<<< HEAD
 void loadBitmap(int state){
   
   int row = 0;
@@ -766,3 +1109,232 @@ void loadBitmap(int state){
   }
   splash_store_array();
 }
+=======
+
+/////////////////////////////From James
+
+
+uint16_t greenColor = 510;
+uint16_t constantBack = 1050;
+unsigned int w;
+uint16_t color_changer;
+
+void splash3(){
+  for(w=90; w>0; w--){
+    //Clear the display first
+    for (i=0;i<30;i++){
+      for(j=0; j<30;j++){
+        grid[i][j].count=0;
+        color_changer = backupdate;
+        grid[i][j].hue=&color_changer;
+        grid[i][j].sat=255;
+        grid[i][j].val=0;
+      }
+    }//end of clearing the display
+    
+    //Then show the LabVIEW portion
+      displayLabVIEW();
+ 
+    sine_wave(w);
+    store_array();
+    strip.refreshLEDs();
+    if ((Serial.available()!=0)||digitalRead(34)||digitalRead(35)||digitalRead(36)||digitalRead(37))break;
+    
+ //   Serial.print("w is: ");Serial.println(w);
+  }//end of looping through the LabVIEW sine wave
+}//END of splash3
+
+void sine_wave(unsigned int startRow){
+  if(startRow>60){startRow-=30;}
+  if(startRow>30){startRow-=30;}
+  int columnSpot;
+  for (i=0;i<30;i++){
+      columnSpot = startRow+i-30;
+      if(columnSpot<0){
+        columnSpot+=30;
+      }
+      int k = (int)(10*sin((2*3.14159/15)*columnSpot) + 10);
+      grid[i][k].hue=&greenColor;
+      grid[i][k].sat=255;
+      grid[i][k].val=70;
+  }
+}//END of sine_wave
+
+
+
+void displayLabVIEW(){
+  //setup a background contrast
+  for(i=0; i<30; i++){
+    for(j=20; j<30; j++){
+      grid[i][j].hue=&constantBack;
+      grid[i][j].sat=255;
+      grid[i][j].val=20;
+    }
+  }
+  
+  //L
+  for(j=21; j<29; j++){
+    grid[0][j].hue=&foodhue;
+    grid[0][j].sat=255;
+    grid[0][j].val=70;
+  }
+  for(i=1; i<3; i++){
+    grid[i][28].hue=&foodhue;
+    grid[i][28].sat=255;
+    grid[i][28].val=70;
+  }
+  //a
+  grid[3][24].hue=&foodhue;
+  grid[3][24].sat=255;
+  grid[3][24].val=70;
+  
+  grid[3][27].hue=&foodhue;
+  grid[3][27].sat=255;
+  grid[3][27].val=70;
+  
+  grid[4][26].hue=&foodhue;
+  grid[4][26].sat=255;
+  grid[4][26].val=70;
+  
+  grid[4][28].hue=&foodhue;
+  grid[4][28].sat=255;
+  grid[4][28].val=70;
+  
+  for(i=4; i<6; i++){
+    grid[i][23].hue=&foodhue;
+    grid[i][23].sat=255;
+    grid[i][23].val=70;
+  }
+  
+  grid[5][27].hue=&foodhue;
+  grid[5][27].sat=255;
+  grid[5][27].val=70;
+  
+  for(j=24; j<29; j++){
+    grid[6][j].hue=&foodhue;
+    grid[6][j].sat=255;
+    grid[6][j].val=70;
+  }
+  
+  //b
+  for(j=21; j<28; j++){
+    grid[8][j].hue=&foodhue;
+    grid[8][j].sat=255;
+    grid[8][j].val=70;
+  }
+  
+  grid[9][25].hue=&foodhue;
+  grid[9][25].sat=255;
+  grid[9][25].val=70;
+  
+  grid[9][28].hue=&foodhue;
+  grid[9][28].sat=255;
+  grid[9][28].val=70;
+  
+  for(j=26; j<28; j++){
+    grid[10][j].hue=&foodhue;
+    grid[10][j].sat=255;
+    grid[10][j].val=70;
+  }
+  
+  //V
+  for(j=21; j<25; j++){
+    grid[11][j].hue=&foodhue;
+    grid[11][j].sat=255;
+    grid[11][j].val=70;
+  }
+  
+  for(j=25; j<28; j++){
+    grid[12][j].hue=&foodhue;
+    grid[12][j].sat=255;
+    grid[12][j].val=70;
+  }
+  
+  grid[13][28].hue=&foodhue;
+  grid[13][28].sat=255;
+  grid[13][28].val=70;
+  
+  for(j=25; j<28; j++){
+    grid[14][j].hue=&foodhue;
+    grid[14][j].sat=255;
+    grid[14][j].val=70;
+  }
+  
+  for(j=21; j<25; j++){
+    grid[15][j].hue=&foodhue;
+    grid[15][j].sat=255;
+    grid[15][j].val=70;
+  }
+  
+  //I
+  for(j=21; j<29; j++){
+    grid[17][j].hue=&foodhue;
+    grid[17][j].sat=255;
+    grid[17][j].val=70;
+  }
+  
+  //E
+  for(j=21; j<29; j++){
+    grid[19][j].hue=&foodhue;
+    grid[19][j].sat=255;
+    grid[19][j].val=70;
+  }
+  
+  for(i=20; i<22; i++){
+    grid[i][21].hue=&foodhue;
+    grid[i][21].sat=255;
+    grid[i][21].val=70;
+  }
+  
+  for(i=20; i<22; i++){
+    grid[i][24].hue=&foodhue;
+    grid[i][24].sat=255;
+    grid[i][24].val=70;
+  }
+  
+  for(i=20; i<22; i++){
+    grid[i][28].hue=&foodhue;
+    grid[i][28].sat=255;
+    grid[i][28].val=70;
+  }
+  
+  //W
+  for(j=21; j<25; j++){
+    grid[23][j].hue=&foodhue;
+    grid[23][j].sat=255;
+    grid[23][j].val=70;
+  }
+  
+  for(j=25; j<28; j++){
+    grid[24][j].hue=&foodhue;
+    grid[24][j].sat=255;
+    grid[24][j].val=70;
+  }
+  
+  grid[25][28].hue=&foodhue;
+  grid[25][28].sat=255;
+  grid[25][28].val=70;
+  
+  for(j=23; j<28; j++){
+    grid[26][j].hue=&foodhue;
+    grid[26][j].sat=255;
+    grid[26][j].val=70;
+  }
+  
+  grid[27][28].hue=&foodhue;
+  grid[27][28].sat=255;
+  grid[27][28].val=70;
+  
+  for(j=25; j<28; j++){
+    grid[28][j].hue=&foodhue;
+    grid[28][j].sat=255;
+    grid[28][j].val=70;
+  }
+  
+  for(j=21; j<25; j++){
+    grid[29][j].hue=&foodhue;
+    grid[29][j].sat=255;
+    grid[29][j].val=70;
+  }
+}//END of displayLabVIEW
+>>>>>>> 44390fbf1509ba8d6a4d29a0660c380ed9ebf165
