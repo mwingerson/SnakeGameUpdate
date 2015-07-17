@@ -1,9 +1,10 @@
 #include <PICxel.h>
 #include <EEPROM.h>
 #include <string.h>
+#include "splash.h"
 
-#define DEBUG_MODE
-
+//#define DEBUG_MODE
+#define splash_millisecond_delay 3000
 typedef struct snode{
   uint8_t en;
   uint8_t count;
@@ -24,10 +25,13 @@ typedef struct snode{
 #define GAMEOVER_ST 3
 
 #define number_of_LEDs 900
+#define number_of_bytes 3600
 #define LED_pin 3
 #define millisecond_delay 1
 
-PICxel strip(number_of_LEDs, LED_pin, HSV);
+PICxel strip(number_of_LEDs, LED_pin, HSV, noalloc);
+
+uint8_t sketch_color_array[number_of_bytes];
 
 uint8_t head[2]={6,1};
 uint8_t food[2];
@@ -38,7 +42,7 @@ snode grid[30][30];
 int lastupdate;
 uint8_t lastbuf[2];
 static int i,j;
-uint16_t difficulty=100;
+uint16_t difficulty=500;
 int snakehue=500;
 
 int backhue=700;
@@ -62,14 +66,18 @@ uint32_t EEPROM_temp[4];
 
 #define CHANGE_HEAP_SIZE(size) __asm__ volatile ("\t.globl _min_heap_size\n\t.equ _min_heap_size, " #size "\n")
 
-CHANGE_HEAP_SIZE(0x2000);
+CHANGE_HEAP_SIZE(0x0);
 
 extern __attribute__((section("linker_defined"))) char _heap;
 extern __attribute__((section("linker_defined"))) char _min_heap_size;
 
 snode* snake_ptr;
 uint8_t changed_flag = 0;
+uint8_t update_flag = 0;
 uint8_t game_state = RESET_ST;
+
+int splash_prevTime = 0;
+int splash_state = 0;
 
 void setup() {
   //start the serial monitor to show the high score when the game ends
@@ -79,22 +87,15 @@ void setup() {
     Serial.println("Microcontroller Starting up");
   #endif
 
+  strip.setArrayPointer(sketch_color_array);
+
   randomSeed(analogRead(A3));
   
   strip.begin();
   reset_grid(); 
 
-  //EEPROM.setMaxAddress(12);
-
-  for(int i=0; i<512;i++)
-    EEPROM.write(i, 0);
-
-/*
-  EEPROM.write(1, 'a');
-  EEPROM.write(2, 'c');
-  EEPROM.write(3, 'b');
-  EEPROM.write(4, 'd');
-*/
+//  for(int i=0; i<512;i++)
+    //EEPROM.write(i, 0);
 
 }
 
@@ -104,7 +105,7 @@ void loop() {
     uint32_t* word_ptr;
     uint32_t word_temp;
 
-    delay(500);
+    //delay(500);
 
   switch (game_state) {
     //reset state
@@ -114,13 +115,10 @@ void loop() {
 
     //run title screen
     case TITLE_ST:   
-
+      snake_splash_screen();
       #if defined DEBUG_MODE
         Serial.println("title screen case");
       #endif
-
-      //delay for 2 seconds
-      delay(2000);
 
       //check for button press to start game and exit title screen
       if(digitalRead(34)||digitalRead(35)||digitalRead(36)||digitalRead(37)){
@@ -150,7 +148,7 @@ void loop() {
         #endif
 
         strcat(strtemp, strtemp2);
-        Serial.print(strtemp);
+        Serial.println(strtemp);
 
         //clear string
         strtemp2[0] = 0;
@@ -160,7 +158,7 @@ void loop() {
           strtemp2[i+1] = 0;
         }
 
-        //Serial.print(strtemp2);
+        Serial.print(strtemp2);
 
         #if defined DEBUG_MODE
           Serial.print("\nname0: ");
@@ -198,7 +196,7 @@ void loop() {
           strtemp2[i+1] = 0;
         }
 
-        //Serial.print(strtemp2);
+        Serial.println(strtemp2);
 
         #if defined DEBUG_MODE
           Serial.print("\nname1: ");
@@ -225,7 +223,7 @@ void loop() {
           Serial.print("data_packet2: ");
         #endif
         strcat(strtemp, strtemp2);
-        Serial.print(strtemp);
+        Serial.println(strtemp);
 
         //clear string
         strtemp2[0] = 0;
@@ -235,7 +233,7 @@ void loop() {
           strtemp2[i+1] = 0;
         }
 
-        //Serial.print(strtemp2);
+        Serial.println(strtemp2);
 
         #if defined DEBUG_MODE
           Serial.print("\nname2: ");
@@ -244,11 +242,11 @@ void loop() {
         #endif
 
         strtemp[0] = 0;
-
-        game_state = RUN_GAME_ST;
-
+        
         lastupdate=millis();
-        backupdate=millis(); 
+        backupdate=millis();
+        
+        game_state = RUN_GAME_ST;
       }
     break;
 
@@ -260,11 +258,13 @@ void loop() {
       #endif
 
       run_game();
+
+      Serial.println(length);
     break;
 
     //game over
     case GAMEOVER_ST:
-
+        death();
       #if defined DEBUG_MODE
         Serial.println("In Gameover state");
 
@@ -455,6 +455,7 @@ void run_game(){
     }
 
     //background has changed so set flag
+    update_flag=1;
     changed_flag = 1;
   }
 
@@ -472,12 +473,77 @@ void run_game(){
   
   //only update the array and refresh LEDs if the state has changed
   if(changed_flag == 1){
-    update();
+    if (update_flag){update();update_flag=0;}
     store_array();
     strip.refreshLEDs();
     //clear flag
     changed_flag = 0;
   }
+}
+
+
+void snake_splash_screen(){
+    int row, col;
+  if(millis()-splash_prevTime > splash_millisecond_delay){
+    splash_prevTime = millis();
+        if(splash_state){
+              //Serial.println("ENTERED SPLASH LOOP");
+              loadBitmap(splash_state);    
+              //splash_store_array();
+              strip.refreshLEDs();
+              splash_state = 0;
+        }
+        else{
+              //Serial.println("ENTERED SPLASH LOOP2");
+              loadBitmap(splash_state); 
+              // Serial.println("check1");   
+              //splash_store_array();
+              //Serial.println("check2");   
+              strip.refreshLEDs();
+              splash_state=1;
+        }            
+  }  
+    //Serial.println("Exit_splash");
+  delay(1);
+}
+
+void splash_store_array(){
+  
+  uint16_t s = 0;
+  
+    for(i = 29; i >= 0; i--){ 
+    
+      if(i % 2 == 0){ //is even
+         for(j = 29; j >= 0; j--){
+         strip.HSVsetLEDColor(s, *grid[j][i].hue, grid[j][i].sat, grid[j][i].val);
+         s ++;        
+       }
+      }
+      else{
+        for(j = 0; j < 30; j++){       
+         strip.HSVsetLEDColor(s, *grid[j][i].hue, grid[j][i].sat, grid[j][i].val);
+         s ++;
+       } 
+      }         
+      }  
+}
+
+void loadBitmap(uint16_t* bitmap){
+  
+  for(i =0; i < (number_of_LEDs * 3); i = i + 3){
+          
+    int row = (i / 3) / 30;
+    int col = (i / 3) % 30;
+    *grid[row][col].hue =bitmap[i];
+    //Serial.println(bitmap[i],DEC);
+    //MainArray[row][col].hue = bitmap[i];
+    grid[row][col].sat = 255;
+    grid[row][col].val = bitmap[i+2];
+          
+  }
+  
+  splash_store_array();
+  strip.refreshLEDs();
 }
 
 //Updates the 2D snake grid array in memory
@@ -506,7 +572,7 @@ void update(){
     if (snake_ptr->en==1){game_state = GAMEOVER_ST; return;}//Ran into self!
     if (snake_ptr->en==2){//FOOD!
       length+=2;
-      difficulty-=2;
+      difficulty-=3;
       spawn_food();
     }
     snake_ptr->en=1;
@@ -553,6 +619,71 @@ void store_array(){
     }
 }
 
+void store_blank(){
+  int s = 0;
+    for(i = 29; i >= 0 ; i--){
+      if(i % 2 == 0){ //is even
+       for(j = 0; j < 30; j++){
+         strip.HSVsetLEDColor(s, 0, 0, 0);
+         s++;
+       }
+      }
+      else{
+       for(j = 29; j >= 0; j--){
+         strip.HSVsetLEDColor(s, 0, 0, 0);
+         s++;
+       } 
+      }
+    }
+}
+
+void death(){
+  store_blank();
+  strip.refreshLEDs();
+  delay(50);
+  store_array();
+  strip.refreshLEDs();
+  delay(250);
+  store_blank();
+  strip.refreshLEDs();
+  delay(50);
+  store_array();
+  strip.refreshLEDs();
+  delay(200);
+  store_blank();
+  strip.refreshLEDs();
+  delay(50);
+  store_array();
+  strip.refreshLEDs();
+  delay(150);
+  store_blank();
+  strip.refreshLEDs();
+  delay(50);
+  store_array();
+  strip.refreshLEDs();
+  delay(100);
+  store_blank();
+  strip.refreshLEDs();
+  delay(50);
+  store_array();
+  strip.refreshLEDs();
+  delay(50);
+  store_blank();
+  strip.refreshLEDs();
+  delay(50);
+  store_array();
+  strip.refreshLEDs();
+  delay(30);
+  store_blank();
+  strip.refreshLEDs();
+  delay(30);
+  store_array();
+  strip.refreshLEDs();
+  delay(20);
+  store_blank();
+  strip.refreshLEDs();
+  delay(500);
+}
 //Randomly spawns an apple on the 2D grid
 void spawn_food(){
   //food={10,1};
@@ -594,7 +725,7 @@ void reset_grid(){
     snake_ptr=snake_ptr->tailptr;
   }  
   spawn_food();
-  difficulty=100;
+  difficulty=165;
 }
 
 void print_EEPROM(){
@@ -612,3 +743,26 @@ void print_EEPROM(){
   Serial.println("------------------------");
 }
 
+void loadBitmap(int state){
+  
+  int row = 0;
+  int col = 0;
+  int stepper = 0;
+  
+  for(stepper =0; stepper < (number_of_LEDs); stepper = stepper + 1){
+    row = (stepper) / 30;
+    col = (stepper) % 30;
+    if(state == 1){
+      *grid[row][col].hue =splash_main_hue[stepper];
+      grid[row][col].val = splash_main_val[stepper];
+    }
+    else{
+      *grid[row][col].hue =splash_btn_hue[stepper];
+      grid[row][col].val = splash_btn_val[stepper];
+    }
+       
+    //Serial.println(*grid[row][col].hue);
+    grid[row][col].sat = 255;      
+  }
+  splash_store_array();
+}
