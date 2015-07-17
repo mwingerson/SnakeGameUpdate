@@ -53,6 +53,9 @@ const uint8_t backbrightness=15;
 
 const uint8_t refreshrate=15;
 
+
+bool timeSave = 0;
+
 int time =0;
 int timeDif = 0;
 
@@ -74,7 +77,7 @@ uint8_t update_flag = 0;
 uint8_t game_state = RESET_ST;
 
 int splash_prevTime = 0;
-int splash_state = 0;
+int splash_state = 1;
 
 void setup() {
   //start the serial monitor to show the high score when the game ends
@@ -115,6 +118,10 @@ void loop() {
     //reset state
     case RESET_ST:
       game_state = TITLE_ST;
+      //delay for 1 seconds
+        reset_grid();
+      
+      delay(1000);
     break;
 
     //run title screen
@@ -124,8 +131,7 @@ void loop() {
         Serial.println("title screen case");
       #endif
 
-      //delay for 2 seconds
-      //delay(2000);
+      
 
       //check for button press to start game and exit title screen
       if(digitalRead(34)||digitalRead(35)||digitalRead(36)||digitalRead(37)){
@@ -311,7 +317,7 @@ void loop() {
       while((Serial.available()==0)&&(!digitalRead(34))&&(!digitalRead(35))&&(!digitalRead(36))&&(!digitalRead(37))){
         splash3();
       }
-
+      timeSave = 0;
       //read in string
       str_index = 0;
       while(Serial.available() > 0){
@@ -322,7 +328,7 @@ void loop() {
         delay(1); //needed for some unknown reason!!!!!
       }
 
-      //terminate string
+     //terminate string
       strtemp[str_index+1] = 0;      
 
 
@@ -492,64 +498,60 @@ void run_game(){
   }
 }
 
+
+//Splash screen which flips between 2 states
 void snake_splash_screen(){
-    int row, col;
+  int row, col;
+  
+  //flip between the tow screensa by calling load bitmap then refreshLeds
   if(millis()-splash_prevTime > splash_millisecond_delay){
-		splash_prevTime = millis();
+	      splash_prevTime = millis();
         if(splash_state){
-              //Serial.println("ENTERED SPLASH LOOP");
               loadBitmap(splash_state);    
-              //splash_store_array();
               strip.refreshLEDs();
               splash_state = 0;
         }
         else{
-              //Serial.println("ENTERED SPLASH LOOP2");
               loadBitmap(splash_state); 
-              // Serial.println("check1");   
-              //splash_store_array();
-              //Serial.println("check2");   
               strip.refreshLEDs();
               splash_state=1;
         }            
   }  
-    //Serial.println("Exit_splash");
   delay(1);
 }
 
+//stores the grid into the PICxel library
 void splash_store_array(){
   
   int s = 0;
-          //Serial.println("start store");
   
     for(i = 29; i >= 0; i--){ 
     
-      if(i % 2 == 0){ //is even
+      if(i % 2 == 0){ 
          for(j = 29; j >= 0; j--){    
-           //Serial.print("hue:"); Serial.print(*grid[j][i].hue, DEC); 
-           //Serial.print("     "); Serial.print("val: "); Serial.println(grid[j][i].val, DEC); 
          strip.HSVsetLEDColor(s, *grid[j][i].hue, grid[j][i].sat, grid[j][i].val);
          s++;        
        }
       }
       else{
-        for(j = 0; j < 30; j++){    
-           //Serial.print("hue:"); Serial.print(*grid[j][i].hue, DEC); 
-           //Serial.print("     "); Serial.print("val: "); Serial.println(grid[j][i].val, DEC);   
+        for(j = 0; j < 30; j++){     
          strip.HSVsetLEDColor(s, *grid[j][i].hue, grid[j][i].sat, grid[j][i].val);
-         //Serial.println("madeit");
          s++;
        } 
       }         
       }  
 }
 
+//Reads values from the hue and value arrays and then stores them into the grid
+//eventually we can change this to use the old store_array instead of splash_store_array
+//The difference is caused by the bitmap being upside down and backward
 void loadBitmap(int state){
   
   int row = 0;
   int col = 0;
   int stepper = 0;
   
+  //store into array
   for(stepper =0; stepper < (number_of_LEDs); stepper = stepper + 1){
     row = (stepper) / 30;
     col = (stepper) % 30;
@@ -562,7 +564,6 @@ void loadBitmap(int state){
       grid[row][col].val = splash_btn_val[stepper];
    }
        
-   // Serial.println(*grid[row][col].hue);
     grid[row][col].sat = 255;
     
           
@@ -770,8 +771,9 @@ void print_EEPROM(){
 
 
 uint16_t greenColor = 510;
-uint16_t int constantBack = 1050;
+uint16_t constantBack = 1050;
 unsigned int w;
+uint16_t color_changer;
 
 void splash3(){
   for(w=90; w>0; w--){
@@ -779,18 +781,21 @@ void splash3(){
     for (i=0;i<30;i++){
       for(j=0; j<30;j++){
         grid[i][j].count=0;
-        grid[i][j].hue=&backupdate;
+        color_changer = backupdate;
+        grid[i][j].hue=&color_changer;
         grid[i][j].sat=255;
         grid[i][j].val=0;
       }
     }//end of clearing the display
     
     //Then show the LabVIEW portion
-    displayLabVIEW();
+      displayLabVIEW();
+ 
     sine_wave(w);
     store_array();
     strip.refreshLEDs();
-    delay(50);
+    if ((Serial.available()!=0)||digitalRead(34)||digitalRead(35)||digitalRead(36)||digitalRead(37))break;
+    
  //   Serial.print("w is: ");Serial.println(w);
   }//end of looping through the LabVIEW sine wave
 }//END of splash3
