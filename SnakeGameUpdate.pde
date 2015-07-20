@@ -3,7 +3,7 @@
 #include <string.h>
 #include "splash.h"
 
-#define DEBUG_MODE
+//#define DEBUG_MODE
 
 #define splash_millisecond_delay 2750
 
@@ -29,7 +29,12 @@ typedef struct snode{
 #define number_of_LEDs 900
 #define number_of_bytes 3600
 #define LED_pin 3
-#define millisecond_delay 1
+#define millisecond_delay 
+
+#define SPEED_INCREASE 2
+#define STOCK_SPEED 100
+
+#define STARTING_LENGTH 8
 
 PICxel strip(number_of_LEDs, LED_pin, HSV, noalloc);
 
@@ -39,17 +44,16 @@ uint8_t head[2]={6,1};
 uint8_t food[2];
 uint8_t dir=RIGHT;
 uint8_t lastdir=RIGHT;
-uint8_t length=6;
+uint8_t length=STARTING_LENGTH;
 snode grid[30][30];
 int lastupdate;
 uint8_t lastbuf[2];
 static int i,j;
-uint16_t difficulty=500;
+
+uint32_t difficulty=STOCK_SPEED;
 
 uint16_t snakehue=500;
-
 uint16_t backhue=700;
-
 uint16_t foodhue=214;
 
 int backupdate=0;
@@ -64,8 +68,9 @@ bool timeSave = 0;
 int time =0;
 int timeDif = 0;
 
-char strtemp[30];
-char strtemp2[30];
+#define buff_size 30
+char strtemp[buff_size];
+char strtemp2[buff_size];
 
 uint32_t EEPROM_temp[4];
 
@@ -99,9 +104,11 @@ void setup() {
   strip.begin();
   reset_grid(); 
 
-//  for(int i=0; i<512;i++)
-    //EEPROM.write(i, 0);
-}
+  //EEPROM.clear();
+
+  for(int i=0; i<40;i++)
+     EEPROM.write(i, 0);
+  }
 
 void loop() {
   char temp_char;
@@ -109,11 +116,15 @@ void loop() {
   uint32_t* word_ptr;
   uint32_t word_temp;
 
+  #if defined DEBUG_MODE
+    delay(500);
+  #endif
+
   switch (game_state) {
     //reset state
     case RESET_ST:
       game_state = TITLE_ST;
-      delay(1000);
+      //delay(1000);
     break;
 
     //run title screen
@@ -140,74 +151,80 @@ void loop() {
         strtemp[0] = 0;
         strcpy(strtemp,"0");
         
-        #if defined DEBUG_MODE
-          Serial.print("score0: ");
-          Serial.print(strtemp);
-          Serial.print("|");
-        #endif
+          #if defined DEBUG_MODE
+            Serial.print("score0: ");
+            Serial.print(strtemp);
+            Serial.print("|");
+          #endif
 
         itoa(EEPROM.read(0), strtemp2, 10);
 
-        #if defined DEBUG_MODE
-          Serial.println(strtemp2);
-          Serial.print("data_packet0: ");
-        #endif
+          #if defined DEBUG_MODE
+            Serial.println(strtemp2); //print highscore
+            Serial.print("data_packet0: ");
+          #endif
 
+        strcat(strtemp, strtemp2);  //concat control char and score
+        get_name_from_EEPROM(0, strtemp2);  //get name
+
+          #if defined DEBUG_MODE
+            Serial.println(strtemp);
+            Serial.print("name0: ");
+            Serial.println(strtemp2);
+          #endif
+
+        //concat contron char, score, " " and name
+        strcat(strtemp, " ");
         strcat(strtemp, strtemp2);
+
+          #if defined DEBUG_MODE
+            Serial.print("Compete data_packet0: ");
+          #endif
+      
         Serial.println(strtemp);
 
-        //clear string
-        strtemp2[0] = 0;
-        //read 12 bytes from EEPROM and make into a string
-        for(int i=0; i<12; i++){
-          strtemp2[i] = EEPROM.read(i+1);
-          strtemp2[i+1] = 0;
-        }
-
-        Serial.println(strtemp2);
-
-        #if defined DEBUG_MODE
-          Serial.print("\nname0: ");
-          Serial.println(strtemp2);
-
-          Serial.println("------------------------");
-          Serial.println("Printing second score");
-        #endif
+          #if defined DEBUG_MODE
+            Serial.println("------------------------");
+            Serial.println("Printing second score");
+          #endif
 
         strtemp[0] = 0;
         //send second high score
         strcpy(strtemp,"1");
 
-        #if defined DEBUG_MODE
-          Serial.print("score1: ");
-          Serial.print(strtemp);
-          Serial.print("|");
-        #endif
+          #if defined DEBUG_MODE
+            Serial.print("score1: ");
+            Serial.print(strtemp);
+            Serial.print("|");
+          #endif
 
         itoa(EEPROM.read(13), strtemp2, 10);
 
-        #if defined DEBUG_MODE
-          Serial.println(strtemp2);
-          Serial.print("data_packet1: ");
-        #endif
+          #if defined DEBUG_MODE
+            Serial.println(strtemp2);
+            Serial.print("data_packet1: ");
+          #endif
 
+        strcat(strtemp, strtemp2);  //concat control char and score
+        get_name_from_EEPROM(1, strtemp2);  //get name
+
+          #if defined DEBUG_MODE
+            Serial.println(strtemp);
+            Serial.print("name1: ");
+            Serial.println(strtemp2);
+          #endif
+
+        //concat control char, score, " " and name
+        strcat(strtemp, " ");
         strcat(strtemp, strtemp2);
-        Serial.print(strtemp);
 
-        //clear string
-        strtemp2[0] = 0;
-        //read 12 bytes from EEPROM and make into a string
-        for(int i=0; i<12; i++){
-          strtemp2[i] = EEPROM.read(i+13);
-          strtemp2[i+1] = 0;
-        }
-
-        Serial.println(strtemp2);
+          #if defined DEBUG_MODE
+            Serial.print("Compete data_packet1: ");
+          #endif
+      
+        Serial.println(strtemp);
 
         #if defined DEBUG_MODE
-          Serial.print("\nname1: ");
-          Serial.println(strtemp2);
-
           Serial.println("------------------------");
           Serial.println("Printing third score");
         #endif
@@ -221,30 +238,33 @@ void loop() {
             Serial.print(strtemp);
             Serial.print("|");
           #endif
-        
-        itoa(EEPROM.read(26), strtemp2, 10);
+
+        itoa(EEPROM.read(13), strtemp2, 10);
 
           #if defined DEBUG_MODE
             Serial.println(strtemp2);
             Serial.print("data_packet2: ");
           #endif
 
-        strcat(strtemp, strtemp2);
-        Serial.println(strtemp);
-
-        //clear string
-        strtemp2[0] = 0;
-        //read 12 bytes from EEPROM and make into a string
-        for(int i=0; i<12; i++){
-          strtemp2[i] = EEPROM.read(i+26);
-          strtemp2[i+1] = 0;
-        }
-
-        Serial.println(strtemp2);
+        strcat(strtemp, strtemp2);  //concat control char and score
+        get_name_from_EEPROM(2, strtemp2);  //get name
 
           #if defined DEBUG_MODE
-            Serial.print("\nname2: ");
+            Serial.println(strtemp);
+            Serial.print("name2: ");
             Serial.println(strtemp2);
+          #endif
+
+        //concat contron char, score, " " and name
+        strcat(strtemp, " ");
+        strcat(strtemp, strtemp2);
+
+          #if defined DEBUG_MODE
+            Serial.print("Compete data_packet2: ");
+          #endif
+      
+        Serial.println(strtemp);
+          #if defined DEBUG_MODE
             Serial.println("------------------------\n");
           #endif
 
@@ -254,44 +274,36 @@ void loop() {
         backupdate=millis();
         
         game_state = RUN_GAME_ST;
+
+          #if defined DEBUG_MODE
+            Serial.println("\n");
+          #endif
       }
     break;
 
     //RUN_GAME_ST
     case RUN_GAME_ST:
 
-      #if defined DEBUG_MODE
-        Serial.println("Running Game");
-      #endif
-
       run_game();
-
-      Serial.println(length);
     break;
 
     //game over
     case GAMEOVER_ST:
       death();
 
+      //print end game score
+      strcpy(strtemp,"4");
+      itoa((length-6)/2, strtemp2, 10);
+      strcat(strtemp, strtemp2);
+      Serial.println(strtemp);
+
         #if defined DEBUG_MODE
           Serial.println("In Gameover state");
 
           Serial.println("Enter game score: ");
 
-          while(Serial.available())
-            temp_char = Serial.read();
-
-          while(Serial.available()==0);
-          
-          //read in string
-          while(Serial.available() > 0){
-            temp_char = Serial.read();
-            if(str_index < sizeof(strtemp))
-              strtemp[str_index++] = temp_char;
-          }
-          //terminate string
-          strtemp[str_index+1] = 0;      
-
+          snake_gets(strtemp);
+    
           length = atoi(strtemp);
 
           Serial.print("You entered: ");
@@ -300,39 +312,21 @@ void loop() {
           Serial.println("Enter name: ");
         #endif
 
-      //clear the strtemp
-      strtemp[0] = 0;
+      snake_gets_or_btn_press(strtemp);
 
-      while(Serial.available())
-        temp_char = Serial.read();
-
-      //wait until button press or string is recieved
-      while((Serial.available()==0)&&(!digitalRead(34))&&(!digitalRead(35))&&(!digitalRead(36))&&(!digitalRead(37)));
-
-      //read in string
-      str_index = 0;
-      while(Serial.available() > 0){
-        temp_char = Serial.read();
-        if(str_index < 30)
-          strtemp[str_index++] = temp_char;
-
-        delay(1); //needed for some unknown reason!!!!!
-      }
-
-      //terminate string
-      strtemp[str_index+1] = 0;      
+        delay(1);
 
         #if defined DEBUG_MODE
           Serial.print("name: ");
           Serial.println(strtemp);
-        #endif
 
-      if(strtemp[0] == 0)
-        strcpy(strtemp, "anonymous");
+          Serial.print("length: ");
+          Serial.println(length);
+        #endif
 
       //horribly inefficient but easy
       //check if new first high score
-      if(length > EEPROM.read(0)){
+      if((length-6)/2 > EEPROM.read(0)){
 
         #if defined DEBUG_MODE
           Serial.println("------------------------");
@@ -344,16 +338,16 @@ void loop() {
         for(int i=25; i>=0; i--)
           EEPROM.write(i+13, EEPROM.read(i));
 
-        EEPROM.write(0, length);
+        EEPROM.write(0, (length-6)/2);
 
         for(int i=0; strtemp[i]; i++){
           EEPROM.write(i+1, (uint8_t)strtemp[i]);
-          EEPROM.write(i+2, 0);
         }
+          EEPROM.write(strlen(strtemp)+1, 0);
       }
 
       //check if new second high score
-      else if(length > EEPROM.read(13)){
+      else if((length-6)/2 > EEPROM.read(13)){
         #if defined DEBUG_MODE
           Serial.println("------------------------");
           Serial.println("replacing score 1");
@@ -361,19 +355,21 @@ void loop() {
         #endif
 
         //copy 1 to 2
-        for(int i=25; i>=13; i--)
+        for(int i=25; i>=13; i--){
           EEPROM.write(i+13, EEPROM.read(i));
 
-        EEPROM.write(13, length);
+        }
+
+        EEPROM.write(13, (length-6)/2);
 
         for(int i=0; strtemp[i]; i++){
-          EEPROM.write(i+13, strtemp[i]);
-          EEPROM.write(i+13, 0);
+          EEPROM.write(i+14, strtemp[i]);
+          EEPROM.write(i+15, 0);
         }
       }
 
       //check if new third high score
-      else if(length > EEPROM.read(26)){
+      else if((length-6)/2 > EEPROM.read(26)){
 
         #if defined DEBUG_MODE
           Serial.println("------------------------");
@@ -381,11 +377,11 @@ void loop() {
           Serial.println("------------------------");
         #endif
 
-        EEPROM.write(26, length);
+        EEPROM.write(26, (length-6)/2);
 
         for(int i=0; strtemp[i]; i++){
-          EEPROM.write(i+26, strtemp[i]);
-          EEPROM.write(i+26, 0);
+          EEPROM.write(i+27, strtemp[i]);
+          EEPROM.write(i+28, 0);
         }
       }
 
@@ -397,15 +393,14 @@ void loop() {
           }
         #endif
 
-      reset_grid();
-
-      //print end game score
-      strcpy(strtemp,"4");
-      itoa(length, strtemp2, 10);
-      strcat(strtemp, strtemp2);
-      Serial.println(strtemp);
 
       game_state = RESET_ST;
+
+      reset_grid();
+
+        #if defined DEBUG_MODE
+          print_EEPROM();
+        #endif
     break;
 
     //error case
@@ -415,7 +410,6 @@ void loop() {
       break;
   }
 }
-
 
 void run_game(){
   //Buttons connected to 34 (yellow UP) - 35 (blue LEFT) - 36 (green DOWN) - 37 (brown RIGHT)
@@ -527,7 +521,6 @@ void splash_store_array(){
   }  
 }
 
-
 //Reads values from the hue and value arrays and then stores them into the grid
 //eventually we can change this to use the old store_array instead of splash_store_array
 //The difference is caused by the bitmap being upside down and backward
@@ -581,8 +574,34 @@ void update(){
     if (snake_ptr->en==1){game_state = GAMEOVER_ST; return;}//Ran into self!
     if (snake_ptr->en==2){//FOOD!
       length+=2;
-      difficulty-=3;
+      difficulty-=SPEED_INCREASE;
       spawn_food();
+
+      //print current score
+        strtemp[0] = 0;
+        strcpy(strtemp,"3");
+
+        #if defined DEBUG_MODE
+          Serial.println("------------------------");
+          Serial.print("current_score: ");
+          Serial.print(strtemp);
+          Serial.print("|");
+        #endif
+
+        itoa((length-6)/2, strtemp2, 10);
+
+        #if defined DEBUG_MODE
+          Serial.println(strtemp2);
+          Serial.print("data_packet: ");
+        #endif
+
+        strcat(strtemp, strtemp2);
+        Serial.println(strtemp);
+
+          #if defined DEBUG_MODE
+            Serial.println("------------------------\n");
+          #endif
+
     }
     snake_ptr->en=1;
     snake_ptr->count=1;
@@ -723,7 +742,7 @@ void reset_grid(){
 
   dir= RIGHT;
   head={6,1};
-  length=6;
+  length=STARTING_LENGTH;
   for (i=6; i>=1; i--){
     snake_ptr=&grid[i][1];
     snake_ptr->en=1;
@@ -735,7 +754,7 @@ void reset_grid(){
     snake_ptr=snake_ptr->tailptr;
   }  
   spawn_food();
-  difficulty=165;
+  difficulty=STOCK_SPEED;
 }
 
 void print_EEPROM(){
@@ -753,16 +772,92 @@ void print_EEPROM(){
   Serial.println("------------------------");
 }
 
+void get_name_from_EEPROM(int num, char* retstr){
+  for(int i=0; i<buff_size; i++)
+    retstr[i] = 0;
+
+  for(int i=0; i<12; i++){
+    retstr[i] = EEPROM.read(i+1+(num*13));
+  }
+  retstr[strlen(retstr)+1] = 0;
+}
+
+void snake_gets(char* retstr){
+  char temp_char = 0;
+  uint8_t str_index = 0;
+
+  for(int i=0; i<buff_size; i++)
+    retstr[i] = 0;
+
+  while(Serial.available())
+    temp_char = Serial.read();
+
+  while(Serial.available()==0);
+  
+  //read in string
+  while(Serial.available() > 0){
+    if(str_index < 30)
+      retstr[str_index++] = Serial.read();;
+    
+    delay(1);
+  }
+
+  //terminate string
+  retstr[strlen(retstr)] = 0;  
+}
+
+void snake_gets_or_btn_press(char* retstr){
+  char temp_char = 0;
+  uint8_t str_index = 0;
+
+  for(int i=0; i<buff_size; i++)
+    retstr[i] = 0;
+
+  while(Serial.available())
+    temp_char = Serial.read();
+
+  //wait for button release
+  while(digitalRead(34)||digitalRead(35)||digitalRead(36)||digitalRead(37));
+
+  while((Serial.available()==0)&&(!digitalRead(34))&&(!digitalRead(35))&&(!digitalRead(36))&&(!digitalRead(37))){
+    splash3();
+  }
+
+  if(digitalRead(34)||digitalRead(35)||digitalRead(36)||digitalRead(37))
+    strcpy(retstr, "anonymous");
+
+  
+  else{
+    retstr[0] = 0;
+    str_index = 0;
+    //read in string
+
+    delay(1);
+
+    while(Serial.available()){
+      temp_char = Serial.read();
+
+      if(str_index < buff_size)
+        retstr[str_index++] = temp_char;
+    }
+
+    //terminate string
+    retstr[strlen(retstr)] = 0;  
+    str_index = 0;
+  }
+}
+
 uint16_t greenColor = 510;
 uint16_t constantBack = 1050;
-unsigned int w;
 uint16_t color_changer;
 
 void splash3(){
+  static uint8_t w;
   for(w=90; w>0; w--){
     //Clear the display first
-    for (i=0;i<30;i++){
-      for(j=0; j<30;j++){
+
+    for (int i=0;i<30;i++){
+      for(int j=0; j<30;j++){
         grid[i][j].count=0;
         color_changer = backupdate;
         grid[i][j].hue=&color_changer;
@@ -777,17 +872,20 @@ void splash3(){
     sine_wave(w);
     store_array();
     strip.refreshLEDs();
-    if ((Serial.available()!=0)||digitalRead(34)||digitalRead(35)||digitalRead(36)||digitalRead(37))break;
-    
- //   Serial.print("w is: ");Serial.println(w);
+
+    if((Serial.available()!=0)||digitalRead(34)||digitalRead(35)||digitalRead(36)||digitalRead(37))
+      break;
+
+    Serial.print(" ");
+
   }//end of looping through the LabVIEW sine wave
 }//END of splash3
 
-void sine_wave(unsigned int startRow){
+void sine_wave(uint8_t startRow){
   if(startRow>60){startRow-=30;}
   if(startRow>30){startRow-=30;}
   int columnSpot;
-  for (i=0;i<30;i++){
+  for (int i=0;i<30;i++){
       columnSpot = startRow+i-30;
       if(columnSpot<0){
         columnSpot+=30;
@@ -801,8 +899,8 @@ void sine_wave(unsigned int startRow){
 
 void displayLabVIEW(){
   //setup a background contrast
-  for(i=0; i<30; i++){
-    for(j=20; j<30; j++){
+  for(int i=0; i<30; i++){
+    for(int j=20; j<30; j++){
       grid[i][j].hue=&constantBack;
       grid[i][j].sat=255;
       grid[i][j].val=20;
@@ -810,12 +908,12 @@ void displayLabVIEW(){
   }
   
   //L
-  for(j=21; j<29; j++){
+  for(int j=21; j<29; j++){
     grid[0][j].hue=&foodhue;
     grid[0][j].sat=255;
     grid[0][j].val=70;
   }
-  for(i=1; i<3; i++){
+  for(int i=1; i<3; i++){
     grid[i][28].hue=&foodhue;
     grid[i][28].sat=255;
     grid[i][28].val=70;
@@ -837,7 +935,7 @@ void displayLabVIEW(){
   grid[4][28].sat=255;
   grid[4][28].val=70;
   
-  for(i=4; i<6; i++){
+  for(int i=4; i<6; i++){
     grid[i][23].hue=&foodhue;
     grid[i][23].sat=255;
     grid[i][23].val=70;
@@ -847,14 +945,14 @@ void displayLabVIEW(){
   grid[5][27].sat=255;
   grid[5][27].val=70;
   
-  for(j=24; j<29; j++){
+  for(int j=24; j<29; j++){
     grid[6][j].hue=&foodhue;
     grid[6][j].sat=255;
     grid[6][j].val=70;
   }
   
   //b
-  for(j=21; j<28; j++){
+  for(int j=21; j<28; j++){
     grid[8][j].hue=&foodhue;
     grid[8][j].sat=255;
     grid[8][j].val=70;
@@ -868,20 +966,20 @@ void displayLabVIEW(){
   grid[9][28].sat=255;
   grid[9][28].val=70;
   
-  for(j=26; j<28; j++){
+  for(int j=26; j<28; j++){
     grid[10][j].hue=&foodhue;
     grid[10][j].sat=255;
     grid[10][j].val=70;
   }
   
   //V
-  for(j=21; j<25; j++){
+  for(int j=21; j<25; j++){
     grid[11][j].hue=&foodhue;
     grid[11][j].sat=255;
     grid[11][j].val=70;
   }
   
-  for(j=25; j<28; j++){
+  for(int j=25; j<28; j++){
     grid[12][j].hue=&foodhue;
     grid[12][j].sat=255;
     grid[12][j].val=70;
@@ -891,58 +989,58 @@ void displayLabVIEW(){
   grid[13][28].sat=255;
   grid[13][28].val=70;
   
-  for(j=25; j<28; j++){
+  for(int j=25; j<28; j++){
     grid[14][j].hue=&foodhue;
     grid[14][j].sat=255;
     grid[14][j].val=70;
   }
   
-  for(j=21; j<25; j++){
+  for(int j=21; j<25; j++){
     grid[15][j].hue=&foodhue;
     grid[15][j].sat=255;
     grid[15][j].val=70;
   }
   
   //I
-  for(j=21; j<29; j++){
+  for(int j=21; j<29; j++){
     grid[17][j].hue=&foodhue;
     grid[17][j].sat=255;
     grid[17][j].val=70;
   }
   
   //E
-  for(j=21; j<29; j++){
+  for(int j=21; j<29; j++){
     grid[19][j].hue=&foodhue;
     grid[19][j].sat=255;
     grid[19][j].val=70;
   }
   
-  for(i=20; i<22; i++){
+  for(int i=20; i<22; i++){
     grid[i][21].hue=&foodhue;
     grid[i][21].sat=255;
     grid[i][21].val=70;
   }
   
-  for(i=20; i<22; i++){
+  for(int i=20; i<22; i++){
     grid[i][24].hue=&foodhue;
     grid[i][24].sat=255;
     grid[i][24].val=70;
   }
   
-  for(i=20; i<22; i++){
+  for(int i=20; i<22; i++){
     grid[i][28].hue=&foodhue;
     grid[i][28].sat=255;
     grid[i][28].val=70;
   }
   
   //W
-  for(j=21; j<25; j++){
+  for(int j=21; j<25; j++){
     grid[23][j].hue=&foodhue;
     grid[23][j].sat=255;
     grid[23][j].val=70;
   }
   
-  for(j=25; j<28; j++){
+  for(int j=25; j<28; j++){
     grid[24][j].hue=&foodhue;
     grid[24][j].sat=255;
     grid[24][j].val=70;
@@ -952,7 +1050,7 @@ void displayLabVIEW(){
   grid[25][28].sat=255;
   grid[25][28].val=70;
   
-  for(j=23; j<28; j++){
+  for(int j=23; j<28; j++){
     grid[26][j].hue=&foodhue;
     grid[26][j].sat=255;
     grid[26][j].val=70;
@@ -962,17 +1060,15 @@ void displayLabVIEW(){
   grid[27][28].sat=255;
   grid[27][28].val=70;
   
-  for(j=25; j<28; j++){
+  for(int j=25; j<28; j++){
     grid[28][j].hue=&foodhue;
     grid[28][j].sat=255;
     grid[28][j].val=70;
   }
   
-  for(j=21; j<25; j++){
+  for(int j=21; j<25; j++){
     grid[29][j].hue=&foodhue;
     grid[29][j].sat=255;
     grid[29][j].val=70;
   }
 }//END of displayLabVIEW
-
-
